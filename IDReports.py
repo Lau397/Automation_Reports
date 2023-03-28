@@ -5,6 +5,11 @@ import pandas as pd
 import calendar
 import datetime
 
+# This code will take in the path of a CSV file that has in it compiled information with unique IDs
+# and will drop unecessary columns and keep only those relevant IDs to manually review and to creae a 
+# report for. The outcome is an Excel file with all the IDs that have a report available to view 
+# regardless of their status. 
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Get the IDs of firms that have reports pending to review regardless of their status")
     parser.add_argument(
