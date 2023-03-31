@@ -8,7 +8,7 @@ import datetime
 # This code will take in the path of a CSV file that has in it compiled information with unique IDs.
 # The script will drop unecessary columns and keep only those relevant IDs to manually review and to create a 
 # report for. 
-# The outcome is an Excel file with all the IDs that have a report available to view 
+# The output is an Excel file with all the IDs that have a report available to view 
 # regardless of their status. 
 
 def parse_args():
