@@ -45,7 +45,11 @@ def main(file_dir):
 
     current_time = datetime.datetime.now()
 
-    file_dir = "C:/Users/l.arguello/Desktop/Revisions/"
+    # Checking if the path exists:
+    if not os.path.exists("/revisions"):
+      
+        # If the output folder path doesn't exist, then, create it.
+        file_dir = os.makedirs("/revisions")
 
     csv_reader.to_excel(file_dir + calendar.month_name[current_time.month] + str(current_time.day) + "_" + str(current_time.hour) + "_" + str(current_time.minute) + "_report.xlsx")
     print("Firm IDs information exported to Excel in Revisions folder")
