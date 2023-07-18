@@ -1,138 +1,100 @@
-﻿
-11:22:15
+﻿Log for 1195587
+45125
+
+
+0.431759259
 Details
-Failed
-Mercer
-Save
-Firm AUM
-Spyglass Capital Management (164)
-Firm (0)
-Mar-23
-John Zhang (U0005164)
-4/6/2023
+Complete
+eVestment Alliance
+Recon
+Performance
+Keeley Teton Advisors (81)
+Mid Cap Dividend Value Fund (I) Net (P1481)
+45100
+Taylor Newton (65)
 
-3:26:27
-"IP address ""10.2.0.6"""
+0.451770833
+"IP address ""10.2.0.21"""
 
-3:26:27
+0.451770833
 "External IP address: ""40.124.136.95"""
 
-3:26:27
+0.451770833
 Closing any popups that might be here.
 
-3:26:27
+0.451770833
 Setting download directory
 
-3:26:27
-Pushing data
+0.451770833
+Reconciling data
+
 
-3:26:27
-"Logging into ""Mercer"""
+0.451770833
+"Logging into ""eVestment Alliance"""
+
 
-3:26:27
-"URL: ""https://www.mercergimd.com/secure/login.asp?RFR="""
-https://www.mercergimd.com/secure/login.asp?RFR=
+0.451770833
+"URL: ""https://app.evestment.com/"""
+https://app.evestment.com/
 
-3:26:46
-"Taking screenshot: ""after-login-1.png"""
+0.452361111
+Starting Performance
 
-3:26:47
-"URL: ""https://www.mercergimd.com/secure/manager/VBMDecision.asp?1=ManagerID"""
-https://www.mercergimd.com/secure/manager/VBMDecision.asp?1=ManagerID
+0.452361111
+Getting Performance data
+
 
-3:27:10
-"Taking screenshot: ""manager_about_page.png"""
+0.452372685
+"URL: ""https://app.evestment.com/input/#submit/section/performance/1092684"""
+https://app.evestment.com/input/#submit/section/performance/1092684
+
 
-3:28:10
-"After login, URL is ""https://www.mercergimd.com/secure/"""
-https://www.mercergimd.com/secure/
+0.452673611
+"Taking screenshot: ""performance_select_vehicle_693_6_2023.png"""
 
-3:28:10
-Starting Firm AUM
+0.452962963
+"Taking screenshot: ""performance_select_vehicle_693_6_2023.png"""
 
-3:28:10
-Mercer only accepts biannual data
+0.4534375
+"Comparing ""Month Net"" 8.29000 ""8.2900"" True"
 
-3:28:10
-Failed for 993727
-
-3:28:10
-No more retries for 993727
-
-3:26:27
-Closing any popups that might be here.
-
-3:26:27
-Setting download directory
-
-3:26:27
-Pushing data
-
-3:26:27
-"Logging into ""Mercer"""
-
-3:26:27
-"URL: ""https://www.mercergimd.com/secure/login.asp?RFR="""
+0.453645833
+"Could not compare values for ""Qtr Net"". This value was null in the Vault"
+Queue item has been requeued for 1015612 -> No more retries
 
-"After login, URL is ""https://www.mercergimd.com/secure/"""
-https://www.mercergimd.com/secure/
+Error in Automation.ProcessBrowser
+Queue item has been requeued for 1016343 -> Performance complete
+
+Error in Automation.ProcessBrowser
+Queue item has been requeued for 1016273 -> Performance complete
+
+Error in Automation.ProcessBrowser
+Queue item has been requeued for 1016203 -> Performance complete
+
+Error in eVestmentAlliance.PushPerformance -> Performance complete
+
+Error in Automation.ProcessBrowser
+Queue item has been requeued for 1016173 -> Performance complete
+
+Error in eVestmentAlliance.PushPerformance -> Performance complete
+
+Error in eVestmentAlliance.PushPerformance -> Performance complete
+
+"Comparing ""Month Gross"" 2.13180 ""1.6555"" False"
+"Comparing ""Qtr Gross"" 2.77129 ""3.2085"" False"
+"Comparing ""Month Net"" 2.12710 ""1.6305"" False"
+"Comparing ""Qtr Net"" 2.75703 ""3.1319"" False"
+Queue item has been requeued for 1016048
+Error in Automation.ProcessBrowser -> No more retries
+Error in Automation.ProcessBrowser
+Queue item has been requeued for 1015932 -> Performance complete
+
 
-3:27:10
-Starting Firm AUM
+0.453645833
+"Taking screenshot: ""performance_net_693_6_2023.png"""
 
-3:27:10
-Mercer only accepts biannual data
+0.453738426
+Performance complete
 
-3:27:10
-Failed for 993727
-
-3:27:10
-Queue item has been requeued for 993727
-
-3:27:27
-"IP address ""10.2.0.45"""
-
-3:27:27
-"External IP address: ""40.124.136.95"""
-
-3:27:27
-Closing any popups that might be here.
-
-3:27:27
-Setting download directory
-
-3:27:27
-Pushing data
-
-3:27:27
-"Logging into ""Mercer"""
-
-3:27:27
-"URL: ""https://www.mercergimd.com/secure/login.asp?RFR="""
-https://www.mercergimd.com/secure/login.asp?RFR=
-
-3:27:47
-"Taking screenshot: ""after-login-1.png"""
-
-3:27:47
-"URL: ""https://www.mercergimd.com/secure/manager/VBMDecision.asp?1=ManagerID"""
-https://www.mercergimd.com/secure/manager/VBMDecision.asp?1=ManagerID
-
-3:28:10
-"Taking screenshot: ""manager_about_page.png"""
-
-3:28:10
-"After login, URL is ""https://www.mercergimd.com/secure/"""
-https://www.mercergimd.com/secure/
-
-3:28:10
-Starting Firm AUM
-
-3:28:10
-Mercer only accepts biannual data
-
-3:28:10
-Failed for 993727
-
-3:28:10
-No more retries for 993727
+0.453738426
+Dashboard was updated!
