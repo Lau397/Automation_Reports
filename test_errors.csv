@@ -1,0 +1,138 @@
+﻿
+11:22:15
+Details
+Failed
+Mercer
+Save
+Firm AUM
+Spyglass Capital Management (164)
+Firm (0)
+Mar-23
+John Zhang (U0005164)
+4/6/2023
+
+3:26:27
+"IP address ""10.2.0.6"""
+
+3:26:27
+"External IP address: ""40.124.136.95"""
+
+3:26:27
+Closing any popups that might be here.
+
+3:26:27
+Setting download directory
+
+3:26:27
+Pushing data
+
+3:26:27
+"Logging into ""Mercer"""
+
+3:26:27
+"URL: ""https://www.mercergimd.com/secure/login.asp?RFR="""
+https://www.mercergimd.com/secure/login.asp?RFR=
+
+3:26:46
+"Taking screenshot: ""after-login-1.png"""
+
+3:26:47
+"URL: ""https://www.mercergimd.com/secure/manager/VBMDecision.asp?1=ManagerID"""
+https://www.mercergimd.com/secure/manager/VBMDecision.asp?1=ManagerID
+
+3:27:10
+"Taking screenshot: ""manager_about_page.png"""
+
+3:28:10
+"After login, URL is ""https://www.mercergimd.com/secure/"""
+https://www.mercergimd.com/secure/
+
+3:28:10
+Starting Firm AUM
+
+3:28:10
+Mercer only accepts biannual data
+
+3:28:10
+Failed for 993727
+
+3:28:10
+No more retries for 993727
+
+3:26:27
+Closing any popups that might be here.
+
+3:26:27
+Setting download directory
+
+3:26:27
+Pushing data
+
+3:26:27
+"Logging into ""Mercer"""
+
+3:26:27
+"URL: ""https://www.mercergimd.com/secure/login.asp?RFR="""
+
+"After login, URL is ""https://www.mercergimd.com/secure/"""
+https://www.mercergimd.com/secure/
+
+3:27:10
+Starting Firm AUM
+
+3:27:10
+Mercer only accepts biannual data
+
+3:27:10
+Failed for 993727
+
+3:27:10
+Queue item has been requeued for 993727
+
+3:27:27
+"IP address ""10.2.0.45"""
+
+3:27:27
+"External IP address: ""40.124.136.95"""
+
+3:27:27
+Closing any popups that might be here.
+
+3:27:27
+Setting download directory
+
+3:27:27
+Pushing data
+
+3:27:27
+"Logging into ""Mercer"""
+
+3:27:27
+"URL: ""https://www.mercergimd.com/secure/login.asp?RFR="""
+https://www.mercergimd.com/secure/login.asp?RFR=
+
+3:27:47
+"Taking screenshot: ""after-login-1.png"""
+
+3:27:47
+"URL: ""https://www.mercergimd.com/secure/manager/VBMDecision.asp?1=ManagerID"""
+https://www.mercergimd.com/secure/manager/VBMDecision.asp?1=ManagerID
+
+3:28:10
+"Taking screenshot: ""manager_about_page.png"""
+
+3:28:10
+"After login, URL is ""https://www.mercergimd.com/secure/"""
+https://www.mercergimd.com/secure/
+
+3:28:10
+Starting Firm AUM
+
+3:28:10
+Mercer only accepts biannual data
+
+3:28:10
+Failed for 993727
+
+3:28:10
+No more retries for 993727
