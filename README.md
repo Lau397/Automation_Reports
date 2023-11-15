@@ -11,3 +11,6 @@ Run the script with:
     🍕python .\IDReports.py \python_test.csv
 ```
 Pizza🍕 not included ofc 👀.
+
+**Update**
+Continued creating code to boost productivity and precision✨
