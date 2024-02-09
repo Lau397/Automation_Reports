@@ -1,5 +1,3 @@
-start_time = time.time()
-
 import os
 import glob 
 import pandas as pd
@@ -8,6 +6,8 @@ import time
 
 import warnings
 warnings.filterwarnings("ignore")
+
+start_time = time.time()
 
 
 # Allowing the user to select the dataset so we can locate the respective folder:
@@ -34,7 +34,7 @@ file_path = absolute_path+user_dataset
 
 # Using glob to get all the Excel file names in the selected folder, to loop through them:
 
-csv_files = glob.glob(os.path.join(file_path, "[^~]*.xlsx")) 
+csv_files = glob.glob(os.path.join(file_path, "[!~]*.xlsx")) 
   
 file_names = []
 
@@ -51,36 +51,34 @@ for f in tqdm(csv_files, desc="Loading…",ascii=False, ncols=75):
 print("Complete.")
 
 
-# For loop to select the Excel file:
-
+# Creating empty lists that will contain reviewed tables:
 final_dict = []
+nodata_ =[]        
+
+# For loop to select the Excel file:
 
 for i in range(len(file_names)):
     # For loop to select the sheet name (vehicle):
     print('Checking file name: ', file_names[i])
 
-    
-    for j in range(len(sheet_names)):
+    excel_file_content = pd.read_excel(file_path+'/'+file_names[i]) 
 
+    for j in range(len(sheet_names)):
+        
         try:
             print('Checking sheet name: ', sheet_names[j])
 
-            # Defining the Excel file to be openned and the sheet we need from the book:
+           # Defining the Excel file to be openned and the sheet we need from the book:
             excel_file_orig = pd.read_excel(file_path+'/'+file_names[i], sheet_name=sheet_names[j])
+
+           # If sheet is not found then let's try this so the code can continue:
         except:
-
-            # If sheet is not found then let's try this so the code can continue:
             print('No sheet found for the vehicle {}'.format(sheet_names[j]))
-            
-            excel_file_content = pd.read_excel(file_path+'/'+file_names[i]) 
-
-            description_ = []
-            description_.append('No audit data generated.')
-            
             dict_ = {'Database': excel_file_content.iloc[4][1],      # Database name e.g. "Wilshire"
-                excel_file_orig.iloc[6][1]: description_,             # Product/vehicle name with description of findings e.g. "Core Fixed Income Composite (P73285)"
-                }
-
+            excel_file_orig.iloc[6][1]: "No audit data generated.",        # Product/vehicle name with description of findings e.g. "Core Fixed Income Composite (P73285)"
+                } 
+            nodata_.append(dict_)
+            output_df_ = pd.DataFrame(nodata_).groupby(['Database']).sum()
             continue
         
 
@@ -132,10 +130,6 @@ for i in range(len(file_names)):
 
         # Putting the dummy variables in a single column:
         excel_file['Review'] = excel_file[excel_file.columns[0:]].apply(lambda x: ''.join(x.astype(str)), axis=1)
-        # Load a sample of how it looks like at the moment:
-        excel_file.head()
-
-        excel_file['Review']
 
         # Creating a for loop to assign the correct description to each period:
         for m,p in enumerate(excel_file['Review']):
@@ -152,7 +146,6 @@ for i in range(len(file_names)):
                 elif all('3' in k for k in p):
                     excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not matching') 
 
-        excel_file['Review']
 
         # Now we need to continue to put the other conditions:
         for m,p in enumerate(excel_file['Review']):
@@ -176,12 +169,10 @@ for i in range(len(file_names)):
                 excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not in the Vault, not matching and not in the database')
 
         
-        excel_file['Review']
-
         # Creating a list for each of the periods in the Review column:
         periods_0 = []
         periods_1 = []
-        periods_2 = []
+        periods_2 = []       
         periods_3 = []
 
         for m,p in enumerate(zip(excel_file['Review'],excel_file.index)):
@@ -222,19 +213,31 @@ for i in range(len(file_names)):
                 excel_file_orig.iloc[6][1]: description,        # Product/vehicle name with description of findings e.g. "Core Fixed Income Composite (P73285)"
                 }  
         
-        # Creating a new dataframe that will sum up the findings in the Data Auditor:
-        output_df = pd.DataFrame([dict_,dict])
+        # Creating a new dataframe that will sum up the findings in the Data Auditor        
+        output_df = pd.DataFrame([dict])
 
         # Putting each description in a single line (this may duplicate the database name):
         output_df0 = output_df.explode(excel_file_orig.iloc[6][1])
 
         # Final dict
-    
         final_dict.append(output_df0)
 
-# a=pd.concat(final_dict)
-        #a.groupby(['Database']).sum()
+# Transforming into a dataframe the last dictionary with the review description:
+final_dict_ = pd.concat(final_dict) 
 
-output_file = pd.concat(final_dict).groupby(['Database']).sum()
+# final_dict_ has a numerical index, whilst output_df_ has databases as its index, so we'll arrange that:
+final_dict_.set_index("Database",drop=True, inplace=True)
+
+# Joining these two tables together and grouping them by database:
+review_file = pd.merge(final_dict_, output_df_, on='Database', how='outer').groupby('Database').sum()
+# Dropping unnecessary columns and replacing zero values with the description "No audit data generated":
+review_file = review_file.columns.str.replace(r'_x$', '')
+review_file = review_file.drop([x for x in review_file if x.endswith('_y')], 1)
+review_file = review_file.str.replace('0', "No audit data generated.", regex=True)
+
+# Sorting column names and Database names:
+review_file = review_file.reindex(sorted(review_file.columns), axis=1)
+review_file = review_file.sort_values(by=['Database'])
+
 
 print("Task completed in %.2fs seconds" % (time.time() - start_time))
