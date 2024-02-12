@@ -40,8 +40,7 @@ csv_files = glob.glob(os.path.join(file_path, "[!~]*.xlsx")) # [!~] to ignore te
 # Empty list to store file names from folder:
 file_names = []
 # Loop over the list of Excel files: 
-for f in tqdm(csv_files, desc="Loading…",ascii=False, ncols=75):
-        
+for f in tqdm(csv_files, desc="Loading…",ascii=False, ncols=75):        
         time.sleep(0.03) 
         # Print the location and filename 
         print('File Name:', f.split("\\")[-1]) 
@@ -54,24 +53,20 @@ print("Complete.")
 final_dict = []
 nodata_ =[]        
 
-
 # For loop to select the Excel file:
 for i in range(len(file_names)):
     
     print('Checking file name: ', file_names[i])
     # This variable will contain the first sheet in the Data Audtor (table of contents) which will be needed to fill information in the tables:
     excel_file_content = pd.read_excel(file_path+'/'+file_names[i]) 
-
+    
     # For loop to select the sheet name (vehicle):
     for j in range(len(sheet_names)):
-        
         # Will do a try and except since there are sheets that don't exist in the files, so the code doesn't crash:
         try:
             print('Checking sheet name: ', sheet_names[j])
-
-           # Defining the Excel file to be openned and the sheet we need from the book:
+            # Defining the Excel file to be openned and the sheet we need from the book:
             excel_file_orig = pd.read_excel(file_path+'/'+file_names[i], sheet_name=sheet_names[j])
-
         # If sheet is not found then let's try this so the code can continue:
         except:
             print('No sheet found for the vehicle {}'.format(sheet_names[j]))
@@ -81,8 +76,6 @@ for i in range(len(file_names)):
             nodata_.append(dict_) # Adding the respective database and vehicle name that does not exist to list
             output_df_ = pd.DataFrame(nodata_).groupby(['Database']).sum() # Grouping dataframe by database
             continue
-        
-
         # Selecting the header names placed in row 7 (row in which we start to have some relevant information to gather):
         excel_file_orig.rename(columns = excel_file_orig.iloc[7], inplace= True)
 
@@ -258,8 +251,11 @@ review_file = review_file.reindex(index=(sorted(review_file.index, key=lambda s:
 review_file.index.name = 'Database'
 
 # Putting descriptions in a new line for each and exporting the excel file:
-with pd.ExcelWriter('file.xlsx', engine="xlsxwriter") as writer:
+excel_output = r'C:\Users\l.arguello\Documents\Python Scripts\APX_automation_reports\output\data_auditor_review\DataAuditor_review_{}.xlsx'.format(user_dataset)
+
+with pd.ExcelWriter(excel_output, engine="xlsxwriter") as writser:
     writer.book.formats[0].set_text_wrap() # Update global format with text_wrap
     review_file.to_excel(writer)
 
-print("Task completed in %.2fs seconds" % (time.time() - start_time))
+timetaken = (time.time() - start_time)/60
+print("Task completed in %.2fs minutes" % timetaken)
