@@ -253,7 +253,7 @@ review_file.index.name = 'Database'
 # Putting descriptions in a new line for each and exporting the excel file:
 excel_output = r'C:\Users\l.arguello\Documents\Python Scripts\APX_automation_reports\output\data_auditor_review\DataAuditor_review_{}.xlsx'.format(user_dataset)
 
-with pd.ExcelWriter(excel_output, engine="xlsxwriter") as writser:
+with pd.ExcelWriter(excel_output, engine="xlsxwriter") as writer:
     writer.book.formats[0].set_text_wrap() # Update global format with text_wrap
     review_file.to_excel(writer)
 
