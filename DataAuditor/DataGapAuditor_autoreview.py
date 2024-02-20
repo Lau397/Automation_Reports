@@ -17,6 +17,7 @@ import os
 import glob 
 import pandas as pd
 from tqdm import tqdm
+from xlsxwriter.utility import xl_range
 import time
 
 import warnings
@@ -148,86 +149,46 @@ for i in range(len(file_names)):
                     excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Complete')
 
                 elif all('1' in k for k in p):
-                    excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not in the Vault')
+                    excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not in the Vault')      # Client could want APX to distribute this data for them
 
                 elif all('2' in k for k in p):
-                    excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not in the database')   
+                    excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not in the database')   # APX needs to distribute this data
 
                 elif all('3' in k for k in p):
                     excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not matching') 
 
 
-        # Now we need to continue to put the other conditions (the mixed ones):
+        # Now we need to continue to put the other conditions:
         for m,p in enumerate(excel_file['Review']):
         
-            #if (any('3' in k for k in p) and any('2' in k for k in p) and any('1' in k for k in p)):
-            #    excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not in the Vault, not matching and not in the database')
-#
-            #elif (any('2' in k for k in p) and any('1' in k for k in p)):
-            #    excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not in the Vault and not in the database')
-#
-            #elif (any('3' in k for k in p) and any('1' in k for k in p)):
-            #    excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not in the Vault and not matching')
-#
-            #elif (any('1' in k for k in p) and any('0' in k for k in p)):
-            #    excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not in the Vault')
-#
-            #elif (any('2' in k for k in p) and any('0' in k for k in p)):
-            #    excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not in the database')
-#
-            #elif (any('3' in k for k in p) and any('0' in k for k in p)):
-            #    excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not matching')
-#
-            if (any('3' in k for k in p) and any('2' in k for k in p) and any('1' in k for k in p)):
-                excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not in the Vault, not matching and not in the database')
+            if (any('1' in k for k in p)):
+                excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 1')    #'Data not in the Vault')   
 
-            elif (any('2' in k for k in p) and any('1' in k for k in p)):
-                excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not in the Vault and not in the database')
+            if (any('2' in k for k in p)):
+              excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 2')      #'Data not in the database')
 
-            elif (any('3' in k for k in p) and any('1' in k for k in p)):
-                excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not in the Vault and not matching')
-
-            elif (any('1' in k for k in p) and any('0' in k for k in p)):
-                excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not in the Vault')
-
-            elif (any('2' in k for k in p) and any('0' in k for k in p)):
-                excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not in the database')
-
-            elif (any('3' in k for k in p) and any('0' in k for k in p)):
-                excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not matching')
+            if (any('3' in k for k in p)):
+              excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 3')      #'Data not matching') 
         
         # Creating a list for each of the periods in the Review column:
         periods_0 = []
         periods_1 = []
         periods_2 = []       
         periods_3 = []
-        periods_4 = []
-        periods_5 = []
-        periods_6 = []
 
         for m,p in enumerate(zip(excel_file['Review'],excel_file.index)):
         
             if p[0] == 'Complete':
                 periods_0.append(p[1])
 
-            elif p[0] == 'Data not in the Vault':
+            elif p[0] == 'Priority 1':
                 periods_1.append(p[1])
 
-            elif p[0] == 'Data not in the database':
+            elif p[0] == 'Priority 2':
                 periods_2.append(p[1])
 
-            elif p[0] == 'Data not matching':
+            elif p[0] == 'Priority 3':
                 periods_3.append(p[1])
-
-            elif p[0] == 'Data not in the Vault, not matching and not in the database':
-                periods_4.append(p[1])
-
-            elif p[0] == 'Data not in the Vault and not in the database':
-                periods_5.append(p[1])
-
-            elif p[0] == 'Data not in the Vault and not matching':
-                periods_6.append(p[1])
-
 
         #0 "Complete"
         #1 "Data not in the Vault"
@@ -237,12 +198,9 @@ for i in range(len(file_names)):
         # A description list is created to put in the final review without considering empty period lists:
         description = []
         if periods_0 := periods_0: description.append("✔ Complete for the periods: {}\n".format((list(set(periods_0)))).replace("'",'').replace('[','').replace(']',''))
-        if periods_1 := periods_1: description.append("● Data not in the Vault for the periods: {}\n".format((list(set(periods_1)))).replace("'",'').replace('[','').replace(']',''))
-        if periods_2 := periods_2: description.append("● Data not in the database for the periods: {}\n".format(list(set((periods_2)))).replace("'",'').replace('[','').replace(']',''))
-        if periods_3 := periods_3: description.append("● Data not matching for the periods: {}\n".format((list(set(periods_3)))).replace("'",'').replace('[','').replace(']',''))  
-        if periods_4 := periods_3: description.append("● Data not in the Vault, not matching and not in the database for the periods: {}\n".format((list(set(periods_3)))).replace("'",'').replace('[','').replace(']',''))  
-        if periods_5 := periods_3: description.append("● Data not in the Vault and not in the database for the periods: {}\n".format((list(set(periods_3)))).replace("'",'').replace('[','').replace(']',''))  
-        if periods_6 := periods_3: description.append("● Data not in the Vault and not matching for the periods: {}\n".format((list(set(periods_3)))).replace("'",'').replace('[','').replace(']',''))  
+        if periods_1 := periods_1: description.append("● Priority 1: {}\n".format((list(set(periods_1)))).replace("'",'').replace('[','').replace(']',''))
+        if periods_2 := periods_2: description.append("● Priority 2: {}\n".format(list(set((periods_2)))).replace("'",'').replace('[','').replace(']',''))
+        if periods_3 := periods_3: description.append("● Priority 3: {}\n".format((list(set(periods_3)))).replace("'",'').replace('[','').replace(']',''))  
 
         # Loading the first sheet "Table of Contents" to obtain information that can be input into the output dataframe:
         excel_file_content = pd.read_excel(file_path+'/'+file_names[i]) 
@@ -285,10 +243,57 @@ review_file.index.name = 'Database'
 
 # Output path with respective name:
 excel_output = r'C:\Users\l.arguello\Documents\Python Scripts\APX_automation_reports\output\data_auditor_review\DataAuditor_review_{}.xlsx'.format(user_dataset)
+
+# Adding legend/keys table:
+legend_dict = {'Priority 1:': "Data not in the database // APX needs to distribute this data",     
+               'Priority 2': "Data not in the Vault // Client could want APX to distribute this data for them",
+               'Priority 3:': "Data not matching // APX needs to review this data until it matches/is Complete"       
+                }
+legend_keys = pd.DataFrame([legend_dict])
+legend_keys = legend_keys.set_axis(['Legend'], axis='index').transpose()
+
+
+
 # Putting descriptions in a new line for each and exporting the excel file:
 with pd.ExcelWriter(excel_output, engine="xlsxwriter") as writer:
     writer.book.formats[0].set_text_wrap() # Update global format with text_wrap
-    review_file.to_excel(writer)
 
+    legend_keys.to_excel(writer, sheet_name = user_dataset, startrow = 1, startcol = 1)
+    review_file.to_excel(writer, sheet_name = user_dataset, startrow = 6, startcol = 1)
+writer.close()
+
+# Accessing the Pandas file and sheet:
+workbook = writer.book
+worksheet = writer.sheets[user_dataset]
+
+# Chart category labels:
+worksheet.write('D1', "Priority 1")
+worksheet.write('D2', "Priority 2")
+worksheet.write('D3', "Priority 3")
+
+# Maximum row number of the DataFrame:
+max_row = len(review_file)
+
+cell_range = xl_range(6, 1, max_row, 1)
+
+worksheet.write_formula('E1', '=COUNTIF(%s, "Priority 1")' % cell_range)
+worksheet.write_formula('E2', '=COUNTIF(%s, "Priority 2")' % cell_range)
+worksheet.write_formula('E3', '=COUNTIF(%s, "Priority 3")' % cell_range)
+
+# Create a Pie chart.
+chart = workbook.add_chart({'type': 'pie'})
+
+# Add the chart series.
+chart.add_series({
+    'categories': '=Sheet1!D2:D3',
+    'values':     '=Sheet1!E2:E3'
+})
+
+# Insert the chart.
+worksheet.insert_chart('K8', chart)
+
+writer.save()
+
+# This is just the time the process took to complete per dataset
 timetaken = (time.time() - start_time)/60
 print("Task completed in %.2fs minutes" % timetaken)
