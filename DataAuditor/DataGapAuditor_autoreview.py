@@ -1,3 +1,18 @@
+
+# This Python code will review the original Data Gap Auditor files generated from the Vault, 
+# and will sum up what has been found in those files.
+# Initially, the code will ask the user to input the desired dataset 
+# to be worked on: Performance, Holdings, AUM or Characteristics.
+
+# The code will then work on that dataset and will create an output Excel file for that 
+# specific dataset that will contain a table summing up all the findings and will include
+# all databases and the products/vehicles stated in the sheet_names variable.
+
+# All the original files are put into the main folder: Manulife_DataAuditor, within it, 
+# the folder contains four (4) folders for each dataset separately and within each, 
+# the Data_Audit_Report Excel files for each database downloaded from the Vault
+
+# Importing Python libraries that will be used:
 import os
 import glob 
 import pandas as pd
@@ -103,19 +118,19 @@ for i in range(len(file_names)):
         
             for m,p in enumerate(excel_file[excel_file.columns[(n)]]):
 
-                # Avoiding code crashes:    
+                # Avoiding code crashes using try/except:    
                 try:
                     if float(p) >= 0 or float(p) <= 0:
                     
                         excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '0') # "Complete"
 
                 except:
-                    if "<NO APX> / " in p:
-                        excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '1') # "Data not in the Vault"
-                    elif " / <NO DATA>" in p:
-                        excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '2') # "Data not in the database"
+                    if " / <NO DATA>" in p:
+                        excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '1') # "Data not in the database" // APX needs to distribute this data
+                    elif "<NO APX> / " in p:
+                        excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '2') # "Data not in the Vault" // Client could want APX to distribute this data for them
                     elif " / " in p:
-                        excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '3') # "Data not matching"  
+                        excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '3') # "Data not matching" // APX needs to review this data until it matches/is Complete     
                     else:
                         excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '')  # If the cell does not contain any of this criteria above, then it's not relevant for our analysis/reviewal
 
@@ -123,10 +138,10 @@ for i in range(len(file_names)):
         # Let's fill the NaN values for easier further processes:
         excel_file.fillna('', inplace=True)
 
-        # Putting the dummy variables in a single column:
+        # Putting the dummy variables in a single column named 'Review':
         excel_file['Review'] = excel_file[excel_file.columns[0:]].apply(lambda x: ''.join(x.astype(str)), axis=1)
 
-        # Creating a for loop to assign the correct description to each period:
+        # Creating a for loop to assign the correct description for each number stated above ^:
         for m,p in enumerate(excel_file['Review']):
 
                 if all('0' in k for k in p):
@@ -142,9 +157,27 @@ for i in range(len(file_names)):
                     excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not matching') 
 
 
-        # Now we need to continue to put the other conditions:
+        # Now we need to continue to put the other conditions (the mixed ones):
         for m,p in enumerate(excel_file['Review']):
         
+            #if (any('3' in k for k in p) and any('2' in k for k in p) and any('1' in k for k in p)):
+            #    excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not in the Vault, not matching and not in the database')
+#
+            #elif (any('2' in k for k in p) and any('1' in k for k in p)):
+            #    excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not in the Vault and not in the database')
+#
+            #elif (any('3' in k for k in p) and any('1' in k for k in p)):
+            #    excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not in the Vault and not matching')
+#
+            #elif (any('1' in k for k in p) and any('0' in k for k in p)):
+            #    excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not in the Vault')
+#
+            #elif (any('2' in k for k in p) and any('0' in k for k in p)):
+            #    excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not in the database')
+#
+            #elif (any('3' in k for k in p) and any('0' in k for k in p)):
+            #    excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not matching')
+#
             if (any('3' in k for k in p) and any('2' in k for k in p) and any('1' in k for k in p)):
                 excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not in the Vault, not matching and not in the database')
 
@@ -250,9 +283,9 @@ review_file = review_file.reindex(index=(sorted(review_file.index, key=lambda s:
 # Making sure index name doesn't get lost:
 review_file.index.name = 'Database'
 
-# Putting descriptions in a new line for each and exporting the excel file:
+# Output path with respective name:
 excel_output = r'C:\Users\l.arguello\Documents\Python Scripts\APX_automation_reports\output\data_auditor_review\DataAuditor_review_{}.xlsx'.format(user_dataset)
-
+# Putting descriptions in a new line for each and exporting the excel file:
 with pd.ExcelWriter(excel_output, engine="xlsxwriter") as writer:
     writer.book.formats[0].set_text_wrap() # Update global format with text_wrap
     review_file.to_excel(writer)
