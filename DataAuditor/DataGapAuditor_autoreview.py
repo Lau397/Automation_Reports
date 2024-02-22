@@ -32,6 +32,7 @@ users = ['APX', 'Client']
 datasets = ['AUM', 'Performance', 'Holdings', 'Characteristics']
 
 for user in users:
+    print('Reviewing for the user  ', user)
     for dataset in datasets:
 
         # Vehicles that we're interested in are being listed here:
@@ -124,114 +125,129 @@ for user in users:
                     for n in range(0, excel_file.shape[1]):
                     
                         for m,p in enumerate(excel_file[excel_file.columns[(n)]]):
-                             if " / <NO DATA>" in p:
+                            try:
+                                if float(p) >= 0 or float(p) <= 0:
+                                    excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '') # "Complete"
+                            
+                            except:
+                             if (p.isdigit(), " / <NO DATA>"):
                                     excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '1') # "Data not in the database" // APX needs to distribute this data
                                 
                              else:
                                     excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '')  # If the cell does not contain any of this criteria above, then it's not relevant for our analysis/reviewal
 
 
-                if user == 'Client':
+                elif user == 'Client':
 
                     # Creating a for loop to assign dummy variables to the Data Gap Auditor report:
                     for n in range(0, excel_file.shape[1]):
                     
-                        for m,p in enumerate(excel_file[excel_file.columns[(n)]]):                            
-                                if "<NO APX> / " in p:
+                        for m,p in enumerate(excel_file[excel_file.columns[(n)]]):  
+                            try:
+                                if float(p) >= 0 or float(p) <= 0:
+                                    excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '') # "Complete"
+
+                            except:                          
+                                if ("<NO APX> / ", p.isdigit()):
                                     excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '2') # "Data not in the Vault" // Client could want APX to distribute this data for them
-                                elif " / " in p:
+                                elif (p.isdigit(), " / ", p.isdigit()):
                                     excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '3') # "Data not matching" // APX needs to review this data until it matches/is Complete     
                                 else:
                                     excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '')  # If the cell does not contain any of this criteria above, then it's not relevant for our analysis/reviewal
 
-# ________________________________________________________________ Data to add in chart ________________________________________________________________
-                # Using this for loop to gather data for the APX file review:
-                                    
-                for n in range(0, excel_file.shape[1]):
-                
-                    for m,p in enumerate(excel_file[excel_file.columns[(n)]]):
-                    
-                        # Avoiding code crashes using try/except:    
-                        try:
-                            if float(p) >= 0 or float(p) <= 0:
-                            
-                                excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '0') # "Complete"
-
-                        except:
-                            if " / <NO DATA>" in p:
-                                excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '1') # "Data not in the database"
-                            elif "<NO APX> / " in p:
-                                excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '2') # "Data not in the Vault" 
-                            elif " / " in p:
-                                excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '3') # "Data not matching"
-                            else:
-                                excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '')  # If the cell does not contaelevant for our analysis/reviewal
 
                 # Let's fill the NaN values for easier further processes:
                 excel_file.fillna('', inplace=True)
 
+# ________________________________________________________________ Data to add in chart ________________________________________________________________
+                ## Using this for loop to gather data for the APX file review:
+                #                    
+                #for n in range(0, excel_file.shape[1]):
+                #
+                #    for m,p in enumerate(excel_file[excel_file.columns[(n)]]):
+                #    
+                #        # Avoiding code crashes using try/except:    
+                #        try:
+                #            if float(p) >= 0 or float(p) <= 0:
+                #            
+                #                excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '0') # "Complete"
+#
+                #        except:
+                #            if " / <NO DATA>" in p:
+                #                excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '1') # "Data not in the database"
+                #            elif "<NO APX> / " in p:
+                #                excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '2') # "Data not in the Vault" 
+                #            elif " / " in p:
+                #                excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '3') # "Data not matching"
+                #            else:
+                #                excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '')  # If the cell does not contaelevant for our analysis/reviewal
+# ________________________________________________________________ Data to add in chart ________________________________________________________________
+
                 # Putting the dummy variables in a single column named 'Review':
                 excel_file['Review'] = excel_file[excel_file.columns[0:]].apply(lambda x: ''.join(x.astype(str)), axis=1)
+                
 
-                # Creating a for loop to assign the correct description for each number stated above ^:
-                for m,p in enumerate(excel_file['Review']):
+                if user == 'APX':                    
+                    # Creating a for loop to assign the correct description for each number stated above ^:
+                    for m,p in enumerate(excel_file['Review']):
+                            if (all('1' in k for k in p)):
+                                excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 1')  # Data not in the Vault // Client could want APX to distribute this data for them
+                            # Now we need to continue to put the other conditions:
+                            elif (any('1' in k for k in p)):
+                                excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 1')  #'Data not in the Vault')
+                            else:  
+                                excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'No annotation')
 
-                        if all('0' in k for k in p):
-                            excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Complete')
+                    # Creating a list for each of the periods in the Review column:
+                    periods_1 = []
 
-                        elif all('1' in k for k in p):
-                            excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 1')  # Data not in the Vault // Client could want APX to distribute this data for them
+                    # Gathering all the periods (month/year) for which each of these conditions stated above are present:
+                    for m,p in enumerate(zip(excel_file['Review'],excel_file.index)):                    
+                        if p[0] == 'Priority 1':
+                            periods_1.append(p[1])   
 
-                        elif all('2' in k for k in p):
+                    # A description list is created to put in the final review without considering empty period lists:
+                    description = []
+                    if periods_1 := periods_1: description.append("● Priority 1: {}\n".format((list(set(periods_1)))).replace("'",'').replace('[','').replace(']',''))
+
+                    
+                if user == 'Client':
+                    # Creating a for loop to assign the correct description for each number stated above ^:
+                    for m,p in enumerate(excel_file['Review']):
+                        if (all('2' in k for k in p)):
                             excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 2')  # Data not in the database // APX needs to distribute this data
 
-                        elif all('3' in k for k in p):
+                        elif (all('3' in k for k in p)):
                             excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 3')  # Data matching
 
+                        elif (any('2' in k for k in p)):
+                            excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 2')    #'Data not in the database')
 
-                # Now we need to continue to put the other conditions:
-                for m,p in enumerate(excel_file['Review']):
-                
-                    if (any('1' in k for k in p)):
-                        excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 1')  #'Data not in the Vault')   
+                        elif (any('3' in k for k in p)):
+                          excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 3')    #'Data not matching') 
+                        else:
+                            excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'No annotation')
 
-                    elif (any('2' in k for k in p)):
-                      excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 2')    #'Data not in the database')
 
-                    elif (any('3' in k for k in p)):
-                      excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 3')    #'Data not matching') 
+                    # Creating a list for each of the periods in the Review column:
+                    periods_2 = []       
+                    periods_3 = []
+                    # Gathering all the periods (month/year) for which each of these conditions stated above are present:
+                    for m,p in enumerate(zip(excel_file['Review'],excel_file.index)):                    
+                        if p[0] == 'Priority 2':
+                            periods_2.append(p[1])
+                        elif p[0] == 'Priority 3':
+                            periods_3.append(p[1])
+                    #0 "Complete"
+                    #1 "Data not in the database"
+                    #2 "Data not in the Vault"
+                    #3 "Data not matching"    
 
-                # Creating a list for each of the periods in the Review column:
-                periods_0 = []
-                periods_1 = []
-                periods_2 = []       
-                periods_3 = []
-                # Gathering all the periods (month/year) for which each of these conditions stated above are present:
-                for m,p in enumerate(zip(excel_file['Review'],excel_file.index)):
-                
-                    if p[0] == 'Complete':
-                        periods_0.append(p[1])
+                    # A description list is created to put in the final review without considering empty period lists:
+                    description = []
+                    if periods_2 := periods_2: description.append("● Priority 2: {}\n".format(list(set((periods_2)))).replace("'",'').replace('[','').replace(']',''))
+                    if periods_3 := periods_3: description.append("● Priority 3: {}\n".format((list(set(periods_3)))).replace("'",'').replace('[','').replace(']',''))  
 
-                    elif p[0] == 'Priority 1':
-                        periods_1.append(p[1])
-
-                    elif p[0] == 'Priority 2':
-                        periods_2.append(p[1])
-
-                    elif p[0] == 'Priority 3':
-                        periods_3.append(p[1])
-
-                #0 "Complete"
-                #1 "Data not in the Vault"
-                #2 "Data not in the database"
-                #3 "Data not matching"    
-
-                # A description list is created to put in the final review without considering empty period lists:
-                description = []
-                if periods_0 := periods_0: description.append("✔ Complete for the periods: {}\n".format((list(set(periods_0)))).replace("'",'').replace('[','').replace(']',''))
-                if periods_1 := periods_1: description.append("● Priority 1: {}\n".format((list(set(periods_1)))).replace("'",'').replace('[','').replace(']',''))
-                if periods_2 := periods_2: description.append("● Priority 2: {}\n".format(list(set((periods_2)))).replace("'",'').replace('[','').replace(']',''))
-                if periods_3 := periods_3: description.append("● Priority 3: {}\n".format((list(set(periods_3)))).replace("'",'').replace('[','').replace(']',''))  
 
                 # Loading the first sheet "Table of Contents" to obtain information that can be input into the output dataframe:
                 excel_file_content = pd.read_excel(file_path+'/'+file_names[i]) 
@@ -273,14 +289,20 @@ for user in users:
         review_file.index.name = 'Database'
 
         # Output path with respective name:
-        excel_output = r'C:\Users\l.arguello\Documents\Python Scripts\APX_automation_reports\output\data_auditor_review\DataAuditor_review_{}.xlsx'.format(dataset)
+        excel_output = r'C:\Users\l.arguello\Documents\Python Scripts\APX_automation_reports\output\data_auditor_review\DataAuditor_review_{}_{}.xlsx'.format(dataset, user)
 
-        # Adding legend/keys table:
-        legend_dict = {'Priority 1': "",     
-                       'Priority 2': "",
-                       'Priority 3': "" }
-        legend_keys = pd.DataFrame([legend_dict])
-        legend_keys = legend_keys.set_axis(['Legend'], axis='index').transpose()
+        if user == 'APX':
+            # Adding legend/keys table:
+            legend_dict = {'Priority 1': "" }
+            legend_keys = pd.DataFrame([legend_dict])
+            legend_keys = legend_keys.set_axis(['Legend'], axis='index').transpose()
+
+        if user == 'Client':
+            # Adding legend/keys table:
+            legend_dict = {'Priority 2': "",
+                           'Priority 3': "" }
+            legend_keys = pd.DataFrame([legend_dict])
+            legend_keys = legend_keys.set_axis(['Legend'], axis='index').transpose()
 
 
 
@@ -330,10 +352,15 @@ for user in users:
                     "valign": "vcenter",
                 }
             )
-            worksheet.merge_range("C2:F2", "Legend", merge_format1)
-            worksheet.merge_range("C3:F3", "Data not in the database // APX needs to distribute this data", merge_format2)
-            worksheet.merge_range("C4:F4", "Data not in the Vault // Client could want APX to distribute this data for them", merge_format2)
-            worksheet.merge_range("C5:F5", "Data not matching // APX needs to review this data until it matches/is Complete", merge_format2)
+
+            if user == 'APX':
+                worksheet.merge_range("C2:F2", "Legend", merge_format1)
+                worksheet.merge_range("C3:F3", "Data not in the database // APX needs to distribute this data", merge_format2)
+
+            if user == 'Client':
+                worksheet.merge_range("C2:F2", "Legend", merge_format1)
+                worksheet.merge_range("C3:F3", "Data not in the Vault // Client could want APX to distribute this data for them", merge_format2)
+                worksheet.merge_range("C4:F4", "Data not matching // Review this data until it matches/is Complete", merge_format2)
 
 
             writer.save()
