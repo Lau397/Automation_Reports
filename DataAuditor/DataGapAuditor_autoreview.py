@@ -119,45 +119,224 @@ for user in users:
                 # Dropping rows and columns in which all the cells contain NaN values:
                 excel_file = excel_file.dropna(how='all', axis=0).dropna(how='all', axis=1)
 
+                # Will be creating a copy of the Excel dataframe up until this point.
+                # This is so that an individual file for each user can be created properly.
+                df_apx = excel_file.copy()
+                df_client = excel_file.copy()
+
+
                 if user == 'APX':
 
                     # Creating a for loop to assign dummy variables to the Data Gap Auditor report:
-                    for n in range(0, excel_file.shape[1]):
+                    for n in range(0, df_apx.shape[1]): 
+                            for m,p in enumerate(df_apx[df_apx.columns[(n)]]):
+                                    try:
+                                        if (int(float(p) >= 0)) or (int(float(p) <= 0)):
+                                            df_apx[df_apx.columns[n]][m] = ''
+                                    except:
+                                        continue
                     
-                        for m,p in enumerate(excel_file[excel_file.columns[(n)]]):
-                            try:
-                                if float(p) >= 0 or float(p) <= 0:
-                                    excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '') # "Complete"
-                            
-                            except:
-                             if (p.isdigit(), " / <NO DATA>"):
-                                    excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '1') # "Data not in the database" // APX needs to distribute this data
-                                
-                             else:
-                                    excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '')  # If the cell does not contain any of this criteria above, then it's not relevant for our analysis/reviewal
+                    # This will check for the data is not in the database/vault/matching:
+                    df_apx = df_apx.replace({r'(-?[0-9\.]+)\s*/ <NO DATA>': '1',     # Data not in database
+                                             r'<NO APX> \s*/ (-?[0-9\.]+)': '',      # Data not in Vault
+                                             r'(-?[0-9\.]+)\s*/ (-?[0-9\.]+)': '',   # Data not matching
+                                            }, regex=True)
 
+                    # Let's fill the NaN values for easier further processes:
+                    df_apx.fillna('', inplace=True)
+
+                    # Putting the dummy variables in a single column named 'Review':
+                    df_apx['Review'] = df_apx[df_apx.columns[0:]].apply(lambda x: ''.join(x.astype(str)), axis=1)
+                                   
+                    # Creating a for loop to assign the correct description for each number stated above ^:
+                    for m,p in enumerate(df_apx['Review']):
+                            if (all('1' in k for k in p)):
+                                df_apx['Review'][m] = df_apx['Review'][m].replace(p, 'Priority 1')  # Data not in the Vault // APX needs to distribute this data 
+                            # Now we need to continue to put the other conditions:
+                            elif (any('1' in k for k in p)):
+                                df_apx['Review'][m] = df_apx['Review'][m].replace(p, 'Priority 1')  
+                            else:  
+                                df_apx['Review'][m] = df_apx['Review'][m].replace(p, 'No annotation')
+
+                    # Creating a list for each of the periods in the Review column:
+                    periods_1 = []
+
+                    # Gathering all the periods (month/year) for which each of these conditions stated above are present:
+                    for m,p in enumerate(zip(df_apx['Review'], df_apx.index)):                    
+                        if p[0] == 'Priority 1':
+                            periods_1.append(p[1])   
+
+                    #0 "Complete"
+                    #1 "Data not in the database"
+                    #2 "Data not in the Vault"
+                    #3 "Data not matching"   
+
+                    # A description list is created to put in the final review without considering empty period lists:
+                    description_apx = []
+                    if periods_1 := periods_1: description_apx.append("● Priority 1: {}\n".format((list(set(periods_1)))).replace("'",'').replace('[','').replace(']',''))
+
+
+
+                    # Loading the first sheet "Table of Contents" to obtain information that can be input into the output dataframe:
+                    excel_file_content = pd.read_excel(file_path+'/'+file_names[i]) 
+
+
+                    # Building the dictionary that will contain the genetal information: database and description, to then transform it into a dataframe:
+
+                    dict = {'Database': excel_file_content.iloc[4][1],      # Database name e.g. "Wilshire"
+                            excel_file_orig.iloc[6][1]: description_apx,        # Product/vehicle name with review description of findings e.g. "Core Fixed Income Composite (P73285)"
+                            }  
+
+                    # Creating a new dataframe that will sum up the findings in the Data Auditor        
+                    output_df = pd.DataFrame([dict])
+
+                    # Putting each description in a single line (this may duplicate the database name):
+                    output_df0 = output_df.explode(excel_file_orig.iloc[6][1])
+
+                    # Final dict
+                    final_dict.append(output_df0)
+
+                    # Transforming into a dataframe the last dictionary with the review description:
+                    final_dict_ = pd.concat(final_dict) 
+
+                    # final_dict_ has a numerical index, whilst output_df_ has databases as its index, so we'll arrange that:
+                    final_dict_.set_index("Database",drop=True, inplace=True)
+
+                    # Joining these two tables together and grouping them by database:
+                    review_file = pd.merge(final_dict_, output_df_, on='Database', how='outer').groupby('Database').sum()
+                    # Dropping unnecessary columns and replacing zero values with the description "No audit data generated":
+                    review_file.columns = review_file.columns.str.replace(r'_x$', '')
+                    review_file = review_file.drop([x for x in review_file if x.endswith('_y')], axis = 1)
+                    review_file = review_file.replace(0, "No audit data generated.", regex=True)
+
+                    # Sorting column names and Database names:
+                    review_file = review_file.reindex(sorted(review_file.columns), axis=1)
+                    # Sorting index alphabetically (case insensitive):
+                    review_file = review_file.reindex(index=(sorted(review_file.index, key=lambda s: s.lower())))
+                    # Making sure index name doesn't get lost:
+                    review_file.index.name = 'Database'
+
+                    # Output path with respective name:
+                    excel_output = r'C:\Users\l.arguello\Documents\Python Scripts\APX_automation_reports\output\data_auditor_review\DataAuditor_review_{}_{}.xlsx'.format(dataset, user)
+
+                    # Adding legend/keys table:
+                    legend_dict = {'Priority 1': "" }
+                    legend_keys = pd.DataFrame([legend_dict])
+                    legend_keys = legend_keys.set_axis(['Legend'], axis='index').transpose()
+
+
+
+
+# ____________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 
                 elif user == 'Client':
 
                     # Creating a for loop to assign dummy variables to the Data Gap Auditor report:
-                    for n in range(0, excel_file.shape[1]):
-                    
-                        for m,p in enumerate(excel_file[excel_file.columns[(n)]]):  
-                            try:
-                                if float(p) >= 0 or float(p) <= 0:
-                                    excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '') # "Complete"
+                    for n in range(0, df_client.shape[1]):
+                            for m,p in enumerate(df_client[df_client.columns[(n)]]):
+                                    try:
+                                        if (int(float(p) >= 0)) or (int(float(p) <= 0)): 
+                                            df_client[df_client.columns[n]][m] = ''
+                                    except:
+                                        continue
 
-                            except:                          
-                                if ("<NO APX> / ", p.isdigit()):
-                                    excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '2') # "Data not in the Vault" // Client could want APX to distribute this data for them
-                                elif (p.isdigit(), " / ", p.isdigit()):
-                                    excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '3') # "Data not matching" // APX needs to review this data until it matches/is Complete     
-                                else:
-                                    excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '')  # If the cell does not contain any of this criteria above, then it's not relevant for our analysis/reviewal
+                    # This will check for the data is not in the database/vault/matching:
+                    df_client = df_client.replace({r'(-?[0-9\.]+)\s*/ <NO DATA>': '',       # Data not in database
+                                                   r'<NO APX> \s*/ (-?[0-9\.]+)': '2',      # Data not in Vault
+                                                   r'(-?[0-9\.]+)\s*/ (-?[0-9\.]+)': '3',   # Data not matching
+                                                  }, regex=True)
+
+                    # Let's fill the NaN values for easier further processes:# "Data not in the Vault" // Client could want APX to distribute this data for them
+                    df_client.fillna('', inplace=True)
+                    # "Data not matching" // APX needs to review this data until it matches/is Complete     
+                    # Putting the dummy variables in a single column named 'Review':
+                    df_client['Review'] = df_client[df_client.columns[0:]].apply(lambda x: ''.join(x.astype(str)), axis=1)# If the cell does not contain any of this criteria above, then it's not relevant for our analysis/reviewal
+
+                    # Creating a for loop to assign the correct description for each number stated above ^:
+                    for m,p in enumerate(df_client['Review']):
+                        if (all('2' in k for k in p)):
+                            df_client['Review'][m] = df_client['Review'][m].replace(p, 'Priority 2')    # Data not in the Vault
+
+                        elif (all('3' in k for k in p)):
+                            df_client['Review'][m] = df_client['Review'][m].replace(p, 'Priority 3')    # Data not matching // Data needs to be reviewed
+
+                        elif (any('2' in k for k in p)):
+                            df_client['Review'][m] = df_client['Review'][m].replace(p, 'Priority 2')    # Data not in the Vault
+
+                        elif (any('3' in k for k in p)):
+                          df_client['Review'][m] = df_client['Review'][m].replace(p, 'Priority 3')      # Data not matching // Data needs to be reviewed
+                        else:
+                            df_client['Review'][m] = df_client['Review'][m].replace(p, 'No annotation')
 
 
-                # Let's fill the NaN values for easier further processes:
-                excel_file.fillna('', inplace=True)
+                    # Creating a list for each of the periods in the Review column:
+                    periods_2 = []       
+                    periods_3 = []
+                    # Gathering all the periods (month/year) for which each of these conditions stated above are present:
+                    for m,p in enumerate(zip(df_client['Review'], df_client.index)):                    
+                        if p[0] == 'Priority 2':
+                            periods_2.append(p[1])
+                        elif p[0] == 'Priority 3':
+                            periods_3.append(p[1])
+
+                    #0 "Complete"
+                    #1 "Data not in the database"
+                    #2 "Data not in the Vault"
+                    #3 "Data not matching"    
+
+                    # A description list is created to put in the final review without considering empty period lists:
+                    description_client = []
+                    if periods_2 := periods_2: description_client.append("● Priority 2: {}\n".format(list(set((periods_2)))).replace("'",'').replace('[','').replace(']',''))
+                    if periods_3 := periods_3: description_client.append("● Priority 3: {}\n".format((list(set(periods_3)))).replace("'",'').replace('[','').replace(']','')) 
+
+
+                    # Loading the first sheet "Table of Contents" to obtain information that can be input into the output dataframe:
+                    excel_file_content = pd.read_excel(file_path+'/'+file_names[i]) 
+
+
+                    # Building the dictionary that will contain the genetal information: database and description, to then transform it into a dataframe:
+
+                    dict = {'Database': excel_file_content.iloc[4][1],      # Database name e.g. "Wilshire"
+                            excel_file_orig.iloc[6][1]: description_client,        # Product/vehicle name with review description of findings e.g. "Core Fixed Income Composite (P73285)"
+                            }  
+
+                    # Creating a new dataframe that will sum up the findings in the Data Auditor        
+                    output_df = pd.DataFrame([dict])
+
+                    # Putting each description in a single line (this may duplicate the database name):
+                    output_df0 = output_df.explode(excel_file_orig.iloc[6][1])
+
+                    # Final dict
+                    final_dict.append(output_df0)
+
+                    # Transforming into a dataframe the last dictionary with the review description:
+                    final_dict_ = pd.concat(final_dict) 
+
+                    # final_dict_ has a numerical index, whilst output_df_ has databases as its index, so we'll arrange that:
+                    final_dict_.set_index("Database",drop=True, inplace=True)
+
+                    # Joining these two tables together and grouping them by database:
+                    review_file = pd.merge(final_dict_, output_df_, on='Database', how='outer').groupby('Database').sum()
+                    # Dropping unnecessary columns and replacing zero values with the description "No audit data generated":
+                    review_file.columns = review_file.columns.str.replace(r'_x$', '')
+                    review_file = review_file.drop([x for x in review_file if x.endswith('_y')], axis = 1)
+                    review_file = review_file.replace(0, "No audit data generated.", regex=True)
+
+                    # Sorting column names and Database names:
+                    review_file = review_file.reindex(sorted(review_file.columns), axis=1)
+                    # Sorting index alphabetically (case insensitive):
+                    review_file = review_file.reindex(index=(sorted(review_file.index, key=lambda s: s.lower())))
+                    # Making sure index name doesn't get lost:
+                    review_file.index.name = 'Database'
+
+                    # Output path with respective name:
+                    excel_output = r'C:\Users\l.arguello\Documents\Python Scripts\APX_automation_reports\output\data_auditor_review\DataAuditor_review_{}_{}.xlsx'.format(dataset, user)
+
+                    # Adding legend/keys table:
+                    legend_dict = {'Priority 2': "",
+                                   'Priority 3': "" }
+                    legend_keys = pd.DataFrame([legend_dict])
+                    legend_keys = legend_keys.set_axis(['Legend'], axis='index').transpose()
 
 # ________________________________________________________________ Data to add in chart ________________________________________________________________
                 ## Using this for loop to gather data for the APX file review:
@@ -183,126 +362,19 @@ for user in users:
                 #                excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '')  # If the cell does not contaelevant for our analysis/reviewal
 # ________________________________________________________________ Data to add in chart ________________________________________________________________
 
-                # Putting the dummy variables in a single column named 'Review':
-                excel_file['Review'] = excel_file[excel_file.columns[0:]].apply(lambda x: ''.join(x.astype(str)), axis=1)
-                
 
-                if user == 'APX':                    
-                    # Creating a for loop to assign the correct description for each number stated above ^:
-                    for m,p in enumerate(excel_file['Review']):
-                            if (all('1' in k for k in p)):
-                                excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 1')  # Data not in the Vault // Client could want APX to distribute this data for them
-                            # Now we need to continue to put the other conditions:
-                            elif (any('1' in k for k in p)):
-                                excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 1')  #'Data not in the Vault')
-                            else:  
-                                excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'No annotation')
-
-                    # Creating a list for each of the periods in the Review column:
-                    periods_1 = []
-
-                    # Gathering all the periods (month/year) for which each of these conditions stated above are present:
-                    for m,p in enumerate(zip(excel_file['Review'],excel_file.index)):                    
-                        if p[0] == 'Priority 1':
-                            periods_1.append(p[1])   
-
-                    # A description list is created to put in the final review without considering empty period lists:
-                    description = []
-                    if periods_1 := periods_1: description.append("● Priority 1: {}\n".format((list(set(periods_1)))).replace("'",'').replace('[','').replace(']',''))
-
-                    
-                if user == 'Client':
-                    # Creating a for loop to assign the correct description for each number stated above ^:
-                    for m,p in enumerate(excel_file['Review']):
-                        if (all('2' in k for k in p)):
-                            excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 2')  # Data not in the database // APX needs to distribute this data
-
-                        elif (all('3' in k for k in p)):
-                            excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 3')  # Data matching
-
-                        elif (any('2' in k for k in p)):
-                            excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 2')    #'Data not in the database')
-
-                        elif (any('3' in k for k in p)):
-                          excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 3')    #'Data not matching') 
-                        else:
-                            excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'No annotation')
-
-
-                    # Creating a list for each of the periods in the Review column:
-                    periods_2 = []       
-                    periods_3 = []
-                    # Gathering all the periods (month/year) for which each of these conditions stated above are present:
-                    for m,p in enumerate(zip(excel_file['Review'],excel_file.index)):                    
-                        if p[0] == 'Priority 2':
-                            periods_2.append(p[1])
-                        elif p[0] == 'Priority 3':
-                            periods_3.append(p[1])
-                    #0 "Complete"
-                    #1 "Data not in the database"
-                    #2 "Data not in the Vault"
-                    #3 "Data not matching"    
-
-                    # A description list is created to put in the final review without considering empty period lists:
-                    description = []
-                    if periods_2 := periods_2: description.append("● Priority 2: {}\n".format(list(set((periods_2)))).replace("'",'').replace('[','').replace(']',''))
-                    if periods_3 := periods_3: description.append("● Priority 3: {}\n".format((list(set(periods_3)))).replace("'",'').replace('[','').replace(']',''))  
-
-
-                # Loading the first sheet "Table of Contents" to obtain information that can be input into the output dataframe:
-                excel_file_content = pd.read_excel(file_path+'/'+file_names[i]) 
-
-
-                # Building the dictionary to then transform it into a dataframe:
-
-                dict = {'Database': excel_file_content.iloc[4][1],      # Database name e.g. "Wilshire"
-                        excel_file_orig.iloc[6][1]: description,        # Product/vehicle name with description of findings e.g. "Core Fixed Income Composite (P73285)"
-                        }  
-
-                # Creating a new dataframe that will sum up the findings in the Data Auditor        
-                output_df = pd.DataFrame([dict])
-
-                # Putting each description in a single line (this may duplicate the database name):
-                output_df0 = output_df.explode(excel_file_orig.iloc[6][1])
-
-                # Final dict
-                final_dict.append(output_df0)
-
-        # Transforming into a dataframe the last dictionary with the review description:
-        final_dict_ = pd.concat(final_dict) 
-
-        # final_dict_ has a numerical index, whilst output_df_ has databases as its index, so we'll arrange that:
-        final_dict_.set_index("Database",drop=True, inplace=True)
-
-        # Joining these two tables together and grouping them by database:
-        review_file = pd.merge(final_dict_, output_df_, on='Database', how='outer').groupby('Database').sum()
-        # Dropping unnecessary columns and replacing zero values with the description "No audit data generated":
-        review_file.columns = review_file.columns.str.replace(r'_x$', '')
-        review_file = review_file.drop([x for x in review_file if x.endswith('_y')], 1)
-        review_file = review_file.replace(0, "No audit data generated.", regex=True)
-
-        # Sorting column names and Database names:
-        review_file = review_file.reindex(sorted(review_file.columns), axis=1)
-        # Sorting index alphabetically (case insensitive):
-        review_file = review_file.reindex(index=(sorted(review_file.index, key=lambda s: s.lower())))
-        # Making sure index name doesn't get lost:
-        review_file.index.name = 'Database'
-
-        # Output path with respective name:
-        excel_output = r'C:\Users\l.arguello\Documents\Python Scripts\APX_automation_reports\output\data_auditor_review\DataAuditor_review_{}_{}.xlsx'.format(dataset, user)
-
-        if user == 'APX':
-            # Adding legend/keys table:
-            legend_dict = {'Priority 1': "" }
-            legend_keys = pd.DataFrame([legend_dict])
-            legend_keys = legend_keys.set_axis(['Legend'], axis='index').transpose()
-
-        if user == 'Client':
-            # Adding legend/keys table:
-            legend_dict = {'Priority 2': "",
-                           'Priority 3': "" }
-            legend_keys = pd.DataFrame([legend_dict])
-            legend_keys = legend_keys.set_axis(['Legend'], axis='index').transpose()
+        #if user == 'APX':
+        #    # Adding legend/keys table:
+        #    legend_dict = {'Priority 1': "" }
+        #    legend_keys = pd.DataFrame([legend_dict])
+        #    legend_keys = legend_keys.set_axis(['Legend'], axis='index').transpose()
+#
+        #if user == 'Client':
+        #    # Adding legend/keys table:
+        #    legend_dict = {'Priority 2': "",
+        #                   'Priority 3': "" }
+        #    legend_keys = pd.DataFrame([legend_dict])
+        #    legend_keys = legend_keys.set_axis(['Legend'], axis='index').transpose()
 
 
 
@@ -310,13 +382,10 @@ for user in users:
         with pd.ExcelWriter(excel_output, engine="xlsxwriter") as writer:
             writer.book.formats[0].set_text_wrap()  # Update global format with text_wrap
             legend_keys.to_excel(writer, startrow = 1, startcol = 1) # Export to Excel file
-            review_file.to_excel(writer, startrow = 6, startcol = 1)
-
-
+            review_file.to_excel(writer, startrow = 6, startcol = 1)     
         # ////////////////////////////////////////////////////////////////////////////////
         # //////////////////////////////////Extra Steps//////////////////////////////////
-        # ///////////////////////////////////////////////////////////////////////////////
-
+        # //////////////////////////////////////////////////////////////////////////////        
         ## Accessing the Pandas file and sheet to add plot:
             # Loading worksheet for some formatting:
             worksheet = writer.sheets['Sheet1']
@@ -327,12 +396,10 @@ for user in users:
             file_format.set_align('left')
             file_format.set_valign('vcenter')
 
-
             for col_num, value in enumerate(review_file.columns.values):    
                 header_format = writer.book.add_format({'bold':True, 'fg_color': '#F2F2F2', 'border_color':'black'})
                 worksheet.write(6, col_num+2, value, header_format) # Set header format in soft gray color
-            worksheet.set_column('B:H', 19.86, file_format)  # Set size of column (19.86 pixels)
-
+            worksheet.set_column('B:H', 19.86, file_format)  # Set size of column (19.86 pixels     
             # Formatting cells:
             # Create a format to use in a merged range
             merge_format1 = writer.book.add_format(
@@ -342,28 +409,23 @@ for user in users:
                     "align": "center",
                     "valign": "vcenter",
                     "fg_color": "#FCE4D6",
-                }
-            )
+                })
 
             merge_format2 = writer.book.add_format(
                 {
                     "border": 1,
                     "align": "left",
                     "valign": "vcenter",
-                }
-            )
+                })
 
             if user == 'APX':
                 worksheet.merge_range("C2:F2", "Legend", merge_format1)
-                worksheet.merge_range("C3:F3", "Data not in the database // APX needs to distribute this data", merge_format2)
-
+                worksheet.merge_range("C3:F3", "Data not in the database // APX needs to distribute this data", merge_format2)       
             if user == 'Client':
                 worksheet.merge_range("C2:F2", "Legend", merge_format1)
                 worksheet.merge_range("C3:F3", "Data not in the Vault // Client could want APX to distribute this data for them", merge_format2)
-                worksheet.merge_range("C4:F4", "Data not matching // Review this data until it matches/is Complete", merge_format2)
-
-
-            writer.save()
+                worksheet.merge_range("C4:F4", "Data not matching // Review this data until it matches/is Complete", merge_format2)     
+            writer.close()
 
 # This is just the time the process took to complete per dataset
 timetaken = (time.time() - start_time)/60
