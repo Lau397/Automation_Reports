@@ -17,7 +17,6 @@ import os
 import glob 
 import pandas as pd
 from tqdm import tqdm
-from xlsxwriter.utility import xl_range
 import time
 
 import warnings
@@ -144,16 +143,16 @@ for dataset in datasets:
             for m,p in enumerate(excel_file['Review']):
 
                     if all('0' in k for k in p):
-                        excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Complete')
+                        excel_file['Review'][m] = excel_file['Review'][m].replace(p, '')
 
                     elif all('1' in k for k in p):
-                        excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not in the Vault')      # Client could want APX to distribute this data for them
+                        excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 1')      # APX needs to distribute this data
 
                     elif all('2' in k for k in p):
-                        excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not in the database')   # APX needs to distribute this data
+                        excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 2')   # Client could want APX to distribute this data for them
 
                     elif all('3' in k for k in p):
-                        excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Data not matching') 
+                        excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 3') # Data not matching
 
 
             # Now we need to continue to put the other conditions:
@@ -176,10 +175,10 @@ for dataset in datasets:
 
             for m,p in enumerate(zip(excel_file['Review'],excel_file.index)):
             
-                if p[0] == 'Complete':
-                    periods_0.append(p[1])
+                #if p[0] == 'Complete':
+                #    periods_0.append(p[1])
 
-                elif p[0] == 'Priority 1':
+                if p[0] == 'Priority 1':
                     periods_1.append(p[1])
 
                 elif p[0] == 'Priority 2':
@@ -228,7 +227,7 @@ for dataset in datasets:
     # Joining these two tables together and grouping them by database:
     review_file = pd.merge(final_dict_, output_df_, on='Database', how='outer').groupby('Database').sum()
     # Dropping unnecessary columns and replacing zero values with the description "No audit data generated":
-    review_file.columns = review_file.columns.str.replace(r'_x$', '')
+    review_file.columns = review_file.columns.str.rstrip("_x")
     review_file = review_file.drop([x for x in review_file if x.endswith('_y')], axis = 1)
     review_file = review_file.replace(0, "No audit data generated.", regex=True)
 
@@ -243,16 +242,16 @@ for dataset in datasets:
     excel_output = r'C:\Users\l.arguello\Documents\Python Scripts\APX_automation_reports\output\data_auditor_review\DataAuditor_review_{}.xlsx'.format(dataset)
 
     # Adding legend/keys table:
-    legend_dict = {'Priority 1:': "",     
-                   'Priority 2:': "",
-                   'Priority 3:': ""       
+    legend_dict = {'Priority 1': "",     
+                   'Priority 2': "",
+                   'Priority 3': ""       
                     }
     legend_keys = pd.DataFrame([legend_dict])
     legend_keys = legend_keys.set_axis(['Legend'], axis='index').transpose()
 
 
 
-# ////////// Extra Steps to add formatting to the Excel file //////////
+    # ////////// Extra Steps to add formatting to the Excel file //////////
     
     with pd.ExcelWriter(excel_output, engine="xlsxwriter") as writer:
         writer.book.formats[0].set_text_wrap()  # Update global format with text_wrap
