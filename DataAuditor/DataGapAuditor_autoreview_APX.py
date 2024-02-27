@@ -121,18 +121,22 @@ for dataset in datasets:
                     # Avoiding code crashes using try/except:    
                     try:
                         if (int(float(p) >= 0)) or (int(float(p) <= 0)):
-                                    excel_file[excel_file.columns[n]][m] = ''  # "Complete"
+                                    excel_file[excel_file.columns[n]][m] = '0'  # "Complete"
                     except:
-                        if (r'(-?[0-9\.]+)\s*/ <NO DATA>') in p:
-                            excel_file[excel_file.columns[n]][m] = '1' # "Data not in the database" // APX needs to distribute this data
+                         continue
+                        #if (r'(-?[0-9\.]+)\s*/ <NO DATA>') in p:
+                        #    excel_file[excel_file.columns[n]][m] = '1' # "Data not in the database" // APX needs to distribute this data
                         #elif "<NO APX> / " in p:
                         #    excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '2') # "Data not in the Vault" // Client could want APX to distribute this data for them
                         #elif " / " in p:
                         #    excel_file[excel_file.columns[n]][m] = excel_file[excel_file.columns[n]][m].replace(p, '3') # "Data not matching" // APX needs to review this data until it matches/is Complete     
-                        else:
-                            excel_file[excel_file.columns[n]][m] = ''  # If the cell does not contain any of this criteria above, then it's not relevant for our analysis/reviewal
+                        #else:
+                        #    excel_file[excel_file.columns[n]][m] = ''  # If the cell does not contain any of this criteria above, then it's not relevant for our analysis/reviewal
 
-
+            excel_file = excel_file.replace({r'(-?[0-9\.]+)\s*/ <NO DATA>': '1',       # Data not in database
+                                   r'<NO APX> \s*/ (-?[0-9\.]+)': '2',      # Data not in Vault
+                                   r'(-?[0-9\.]+)\s*/ (-?[0-9\.]+)': '3',   # Data not matching
+                                  }, regex=True)
             # Let's fill the NaN values for easier further processes:
             excel_file.fillna('', inplace=True)
 
@@ -145,10 +149,11 @@ for dataset in datasets:
                     #if all('0' in k for k in p):
                     #    excel_file['Review'][m] = excel_file['Review'][m].replace(p, '')
 
-                    if all('1' in k for k in p):
+                    if any('1' in k for k in p):
                         excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 1')      # APX needs to distribute this data
-                    elif (any('1' in k for k in p)):
-                        excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 1')    #'Data not in the Vault')   
+    
+                    #elif (all('1' in k for k in p)):
+                    #    excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 1')    #'Data not in the Vault')   
                     #elif all('2' in k for k in p):
                     #    excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 2')   # Client could want APX to distribute this data for them
 
@@ -183,7 +188,7 @@ for dataset in datasets:
                 if p[0] == 'Priority 1':
                     periods_1.append(p[1])
                 elif periods_1 == periods_1:
-                    description.append("No annotation".format((list(set(periods_1)))).replace("'",'').replace('[','').replace(']',''))    
+                    description.append("\nNo annotation\n".format((list(set(periods_1)))).replace("'",'').replace('[','').replace(']',''))    
 
                 #elif p[0] == 'Priority 2':
                 #    periods_2.append(p[1])
@@ -202,7 +207,7 @@ for dataset in datasets:
             if periods_1 := periods_1: description.append("● Priority 1: {}\n".format((list(set(periods_1)))).replace("'",'').replace('[','').replace(']',''))
             # if periods_2 := periods_2: description.append("● Priority 2: {}\n".format(list(set((periods_2)))).replace("'",'').replace('[','').replace(']',''))
             # if periods_3 := periods_3: description.append("● Priority 3: {}\n".format((list(set(periods_3)))).replace("'",'').replace('[','').replace(']',''))  
-
+            description = set(description)
             # Loading the first sheet "Table of Contents" to obtain information that can be input into the output dataframe:
             excel_file_content = pd.read_excel(file_path+'/'+file_names[i]) 
 
@@ -246,9 +251,7 @@ for dataset in datasets:
     excel_output = r'C:\Users\l.arguello\Documents\Python Scripts\APX_automation_reports\output\data_auditor_review\DataAuditor_review_{}_APX.xlsx'.format(dataset)
 
     # Adding legend/keys table:
-    legend_dict = {'Priority 1': "",     
-                   'Priority 2': "",
-                   'Priority 3': ""       
+    legend_dict = {'Priority 1': "",       
                     }
     legend_keys = pd.DataFrame([legend_dict])
     legend_keys = legend_keys.set_axis(['Legend'], axis='index').transpose()
