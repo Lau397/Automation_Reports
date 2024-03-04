@@ -212,7 +212,9 @@ for dataset in datasets:
             if periods_1 := periods_1: description.append("● Priority 1: {}\n".format((list(set(periods_1)))).replace("'",'').replace('[','').replace(']',''))
             # if periods_2 := periods_2: description.append("● Priority 2: {}\n".format(list(set((periods_2)))).replace("'",'').replace('[','').replace(']',''))
             # if periods_3 := periods_3: description.append("● Priority 3: {}\n".format((list(set(periods_3)))).replace("'",'').replace('[','').replace(']',''))  
+            
             description = list(set(description))
+            
             # Loading the first sheet "Table of Contents" to obtain information that can be input into the output dataframe:
             excel_file_content = pd.read_excel(file_path+'/'+file_names[i]) 
 
