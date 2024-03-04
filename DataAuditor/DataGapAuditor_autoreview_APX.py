@@ -113,6 +113,9 @@ for dataset in datasets:
             # Dropping rows and columns in which all the cells contain NaN values:
             excel_file = excel_file.dropna(how='all', axis=0).dropna(how='all', axis=1)
 
+            # Removing commas in the numerical values:
+            excel_file = excel_file.replace(",","",regex=True)
+
             # Creating a for loop to assign dummy variables to the Data Gap Auditor report:
             for n in range(0, excel_file.shape[1]):
             
@@ -160,6 +163,7 @@ for dataset in datasets:
                     #elif all('3' in k for k in p):
                     #    excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 3') # Data not matching
 
+            # *********************** a.to_excel(r'E:\Users\LauraMelissa\Downloads\apx\testingfile.xlsx')
 
             # Now we need to continue to put the other conditions:
             #for m,p in enumerate(excel_file['Review']):
@@ -189,7 +193,8 @@ for dataset in datasets:
                     periods_1.append(p[1])
                 elif periods_1 == periods_1:
                     description.append("\nNo annotation\n".format((list(set(periods_1)))).replace("'",'').replace('[','').replace(']',''))    
-
+            
+            periods_1 = list(set(periods_1))
                 #elif p[0] == 'Priority 2':
                 #    periods_2.append(p[1])
 
@@ -207,7 +212,7 @@ for dataset in datasets:
             if periods_1 := periods_1: description.append("● Priority 1: {}\n".format((list(set(periods_1)))).replace("'",'').replace('[','').replace(']',''))
             # if periods_2 := periods_2: description.append("● Priority 2: {}\n".format(list(set((periods_2)))).replace("'",'').replace('[','').replace(']',''))
             # if periods_3 := periods_3: description.append("● Priority 3: {}\n".format((list(set(periods_3)))).replace("'",'').replace('[','').replace(']',''))  
-            description = set(description)
+            description = list(set(description))
             # Loading the first sheet "Table of Contents" to obtain information that can be input into the output dataframe:
             excel_file_content = pd.read_excel(file_path+'/'+file_names[i]) 
 
@@ -248,8 +253,8 @@ for dataset in datasets:
     review_file.index.name = 'Database'
 
     # Output path with respective name:
-    excel_output = r'C:\Users\l.arguello\Documents\Python Scripts\APX_automation_reports\output\data_auditor_review\DataAuditor_review_{}_APX.xlsx'.format(dataset)
-
+    # excel_output = r'C:\Users\l.arguello\Documents\Python Scripts\APX_automation_reports\output\data_auditor_review\DataAuditor_review_{}_APX.xlsx'.format(dataset)
+    # ********** excel_output = r'E:\Users\LauraMelissa\Downloads\apx\output\DataAuditor_review_{}_APX.xlsx'.format(dataset)
     # Adding legend/keys table:
     legend_dict = {'Priority 1': "",       
                     }
