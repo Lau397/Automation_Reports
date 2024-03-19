@@ -79,8 +79,8 @@ for dataset in datasets:
             except:
             # If sheet is not found then let's try this so the code can continue:
                 print('No sheet found for the vehicle {}'.format(sheet_names[j]))
-                dict_ = {'Database': excel_file_content.iloc[4][1],            # Database name e.g. "Wilshire"
-                         sheet_names[j]: "No audit data generated.",        # Product/vehicle name with description of findings e.g. "Core Fixed Income Composite (P73285)"
+                dict_ = {'Database': excel_file_content.iloc[4][1],             # Database name e.g. "Wilshire"
+                         sheet_names[j]: "No audit data generated.",            # Product/vehicle name with description of findings e.g. "Core Fixed Income Composite (P73285)"
                         } 
                 nodata_.append(dict_) # Adding the respective database and vehicle name that does not exist to list
                 output_df_ = pd.DataFrame(nodata_).groupby(['Database']).sum() # Grouping dataframe by database
@@ -118,8 +118,8 @@ for dataset in datasets:
                              excel_file[excel_file.columns[n]][m] = '2'     # "Data not in the Vault" // Client could want APX to distribute this data for them
                         elif re.match(r'(-?[0-9\.]+) \s*/ (-?[0-9\.]+)', p):
                              excel_file[excel_file.columns[n]][m] = '3'     # "Data not matching" // APX needs to review this data until it matches/is Complete  
-                        else:
-                             excel_file[excel_file.columns[n]][m] = ''
+                        # else:
+                        #     excel_file[excel_file.columns[n]][m] = ''
 
                             #if (r'(-?[0-9\.]+)\s*/ <NO DATA>') in p:
                             #    excel_file[excel_file.columns[n]][m] = '1' # "Data not in the database" // APX needs to distribute this data
@@ -159,31 +159,31 @@ for dataset in datasets:
             excel_file['Review'] = excel_file[excel_file.columns[0:]].apply(lambda x: ''.join(x.astype(str)), axis=1)
 
             for m,p in enumerate(excel_file['Review']):
-
-
+#
+#
                             #if all('0' in k for k in p):
                             #    excel_file['Review'][m] = excel_file['Review'][m].replace(p, '')
-
+#
                         #if any('1' in k for k in p):
                         #    excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 1')          # APX needs to distribute this data
-
+#
                             #elif (all('1' in k for k in p)):
                             #    excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 1')     # Data not in the Vault  
                             if all('2' in k for k in p):
-                                excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 2')      # Client could want APX to distribute this data for them
-                            elif any('2' in k for k in p) and any('0' in k for k in p):
-                                excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 2')      # Client could want APX to distribute this data for them
+                                excel_file['Review'][m] = 'Priority 2'      # Client could want APX to distribute this data for them
+                            if all('3' in k for k in p):
+                                excel_file['Review'][m] = 'Priority 3'      # Data not matching
+                        
+#
+                            if ('0' and '2' in p):
+                                excel_file['Review'][m] = 'Priority 2'                      # Client could want APX to distribute this data for them                            
+                            if ('0' and '3' in p):
+                                excel_file['Review'][m] = 'Priority 3'                      # Data not matching                            
+                            if ('2' and '3' in p):
+                               excel_file['Review'][m] = 'Priority 2 and Priority 3'       # Data not in the Vault and not matching
 
-                            elif all('3' in k for k in p):
-                                excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 3')      # Data not matching
-                            elif any('3' in k for k in p) and any('0' in k for k in p):
-                                excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 3')      # Data not matching
-                            
-                            elif any('2' in k for k in p) and any('3' in k for k in p):
-                                excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 2 and Priority 3')      # Data not in the Vault and not matching
-
-                            elif all('' in k for k in p):
-                                excel_file['Review'][m] = excel_file['Review'][m].replace(p, '')
+                            if all(excel_file.iloc[:,1:-1]==''):
+                                excel_file['Review'][m] =''
                                  
                             
             excel_file.to_excel(r'C:\Users\l.arguello\Documents\Python Scripts\APX_automation_reports\output\data_auditor_review\{}_{}_sheet{}.xlsx'.format(file_names[i], dataset, sheet_names[j]))
@@ -194,7 +194,7 @@ for dataset in datasets:
             description = []
             for m,p in enumerate(zip(excel_file['Review'],excel_file.index)):
 
-            #if p[0] == 'Complete':
+            #if p[0] == 'Complete':Is
             #    periods_0.append(p[1])
 
             # APX FILE     if p[0] == 'Priority 1':
