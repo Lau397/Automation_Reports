@@ -191,6 +191,7 @@ for dataset in datasets:
     review_file.columns = review_file.columns.str.rstrip("_x")
     review_file = review_file.drop([x for x in review_file if x.endswith('_y')], axis = 1)
     review_file = review_file.replace(0, "No audit data generated.", regex=True)
+    review_file = review_file.replace('', "No audit data generated.", regex=True)
     # Sorting column names and Database names:
     review_file = review_file.reindex(sorted(review_file.columns), axis=1)
     # Sorting index alphabetically (case insensitive):

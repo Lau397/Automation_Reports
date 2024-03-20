@@ -157,8 +157,22 @@ for dataset in datasets:
             excel_file.fillna('', inplace=True)
                 # Putting the dummy variables in a single column named 'Review':
             excel_file['Review'] = excel_file[excel_file.columns[0:]].apply(lambda x: ''.join(x.astype(str)), axis=1)
+            
 
-            for m,p in enumerate(excel_file['Review']):
+            for m,p in enumerate(excel_file['Review']):     
+                                    if p != '':
+                                            if all('2' in k for k in p):
+                                                excel_file['Review'][m] = 'Priority 2'      # Client could want APX to distribute this data for them
+                                            if all('3' in k for k in p):
+                                                excel_file['Review'][m] = 'Priority 3'      # Data not matching
+
+##              
+                                            if ('0' and '2' in p):
+                                                excel_file['Review'][m] = 'Priority 2'                      # Client could want APX to distribute this data for them                            
+                                            if ('0' and '3' in p):
+                                                excel_file['Review'][m] = 'Priority 3'                      # Data not matching                            
+                                            if ('2' and '3' in p):
+                                                excel_file['Review'][m] = 'Priority 2 and Priority 3'       # Data not in the Vault and not matching
 #
 #
                             #if all('0' in k for k in p):
@@ -169,24 +183,25 @@ for dataset in datasets:
 #
                             #elif (all('1' in k for k in p)):
                             #    excel_file['Review'][m] = excel_file['Review'][m].replace(p, 'Priority 1')     # Data not in the Vault  
-                            if all('2' in k for k in p):
-                                excel_file['Review'][m] = 'Priority 2'      # Client could want APX to distribute this data for them
-                            if all('3' in k for k in p):
-                                excel_file['Review'][m] = 'Priority 3'      # Data not matching
-                        
+            #                    if all('2' in k for k in p):
+            #                        excel_file['Review'][m] = 'Priority 2'      # Client could want APX to distribute this data for them
+            #                    if all('3' in k for k in p):
+            #                        excel_file['Review'][m] = 'Priority 3'      # Data not matching
 #
-                            if ('0' and '2' in p):
-                                excel_file['Review'][m] = 'Priority 2'                      # Client could want APX to distribute this data for them                            
-                            if ('0' and '3' in p):
-                                excel_file['Review'][m] = 'Priority 3'                      # Data not matching                            
-                            if ('2' and '3' in p):
-                               excel_file['Review'][m] = 'Priority 2 and Priority 3'       # Data not in the Vault and not matching
+### #
+            #                    if ('0' and '2' in p):
+            #                        excel_file['Review'][m] = 'Priority 2'                      # Client could want APX to distribute this data for them                            
+            #                    if ('0' and '3' in p):
+            #                        excel_file['Review'][m] = 'Priority 3'                      # Data not matching                            
+            #                    if ('2' and '3' in p):
+            #                        excel_file['Review'][m] = 'Priority 2 and Priority 3'       # Data not in the Vault and not matching
 
-                            if all(excel_file.iloc[:,1:-1]==''):
-                                excel_file['Review'][m] =''
                                  
                             
             excel_file.to_excel(r'C:\Users\l.arguello\Documents\Python Scripts\APX_automation_reports\output\data_auditor_review\{}_{}_sheet{}.xlsx'.format(file_names[i], dataset, sheet_names[j]))
+
+
+
             #periods_1 = []
             periods_2 = []       
             periods_3 = []
@@ -210,33 +225,30 @@ for dataset in datasets:
                 elif p[0] == 'Priority 2 and Priority 3':
                      periods_2_3.append(p[1])
 
-                if periods_2 == periods_2:
-                     description.append("".format((list(set(periods_2)))).replace("'",'').replace('[','').replace(']',''))    
-                elif periods_3 == periods_3:
-                     description.append("".format((list(set(periods_3)))).replace("'",'').replace('[','').replace(']',''))  
-                elif periods_2_3 == periods_2_3:
-                     description.append("".format((list(set(periods_2_3)))).replace("'",'').replace('[','').replace(']',''))
+                #if periods_2 == periods_2:
+                #     description.append("".format((list(set(periods_2)))).replace("'",'').replace('[','').replace(']',''))    
+                #elif periods_3 == periods_3:
+                #     description.append("".format((list(set(periods_3)))).replace("'",'').replace('[','').replace(']',''))  
+                #elif periods_2_3 == periods_2_3:
+                #     description.append("".format((list(set(periods_2_3)))).replace("'",'').replace('[','').replace(']',''))
             periods_2 = list(set(periods_2))
             periods_3 = list(set(periods_3))
             periods_2_3 = list(set(periods_2_3))
-
-
-                #elif p[0] == 'Priority 2':
-                #    periods_2.append(p[1])
-                #elif p[0] == 'Priority 3':
-                #    periods_3.append(p[1])
-            #0 "Complete"
-            #1 "Data not in the Vault"
-            #2 "Data not in the database"
-            #3 "Data not matching"    
+  
             # A description list is created to put in the final review without considering empty period lists:
-            # if periods_0 := periods_0: description.append("✔ Complete for the periods: {}\n".format((list(set(periods_0)))).replace("'",'').replace('[','').replace(']',''))
-            # if periods_1 := periods_1: description.append("● Priority 1: {}\n".format((list(set(periods_1)))).replace("'",'').replace('[','').replace(']',''))
             if periods_2 := periods_2: description.append("● Priority 2: {}\n".format(list(set((periods_2)))).replace("'",'').replace('[','').replace(']',''))
             if periods_3 := periods_3: description.append("● Priority 3: {}\n".format((list(set(periods_3)))).replace("'",'').replace('[','').replace(']',''))  
             if periods_2_3 := periods_2_3: description.append("● Priority 2 and Priority 3: {}\n".format((list(set(periods_2_3)))).replace("'",'').replace('[','').replace(']',''))  
+
+            # This is to make the table look cleaner and then to be able to add another description in a further step:
+            if periods_2 == periods_2: description.append("".format(list(set((periods_2)))).replace("'",'').replace('[','').replace(']',''))
+            if periods_3 == periods_3: description.append("".format((list(set(periods_3)))).replace("'",'').replace('[','').replace(']',''))  
+            if periods_2_3 == periods_2_3: description.append("".format((list(set(periods_2_3)))).replace("'",'').replace('[','').replace(']',''))  
+
             description = list(set(description))
 
+
+            # Loading the original content from the original Excel file:
             excel_file_content = pd.read_excel(file_path+'/'+file_names[i]) 
             # Building the dictionary to then transform it into a dataframe:
             dict = {'Database': excel_file_content.iloc[4][1],      # Database name e.g. "Wilshire"
@@ -248,6 +260,7 @@ for dataset in datasets:
             output_df0 = output_df.explode(excel_file_orig.iloc[6][1])
             # Final dict
             final_dict.append(output_df0)
+
 # ###########################
             
     # Transforming into a dataframe the last dictionary with the review description:
@@ -274,6 +287,7 @@ for dataset in datasets:
     review_file.columns = review_file.columns.str.rstrip("_x")
     review_file = review_file.drop([x for x in review_file if x.endswith('_y')], axis = 1)
     review_file = review_file.replace(0, "No audit data generated.", regex=True)
+    review_file = review_file.replace('', "No audit data generated.", regex=True)
     # Sorting column names and Database names:
     review_file = review_file.reindex(sorted(review_file.columns), axis=1)
     # Sorting index alphabetically (case insensitive):
@@ -332,6 +346,8 @@ for dataset in datasets:
         worksheet.merge_range("C4:F4", "Data not matching // Review this data until it matches/is Complete", merge_format2)     
         
         writer.close()
+
+
 
 # This is just the time the process took to complete per dataset
 timetaken = (time.time() - start_time)/60
